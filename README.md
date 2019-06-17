@@ -54,6 +54,7 @@ Other generated files are stored under `/$out_root_list/$task/datatype {wifi, AD
  
 Specifically, the folder `/$out_root_data/$task/mixed/` contains generated files for all datatypes provided in `.tsv` files. For example, if there are two datatypes in `.tsv` files, e.g., `wifi` and `ADS-B`,  it will generate files for both `filtered wifi` and `raw ADS-B` signals; if there are three datatypes in `.tsv` files, `wifi`, `ADS-B` and `newtype`,  it will generate files for `filtered wifi`, `raw ADS-B`, and `{raw | filtered, depends on $newtype_filter} newtype` signals together. Notice that equalized and raw signals are in different domain and cannot be trained/tested together, the folder `~/mixed/` will contain generated files only for `filtered wifi` no matter argument `--wifi_eq` is set to `True` or not.
 
+### An Example: Preprocessing a General Task
 An example of running the preprocessing would be: 
 ```bash
 $ python ./preprocessing/main.py \
