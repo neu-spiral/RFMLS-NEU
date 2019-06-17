@@ -5,9 +5,6 @@
      *  [An Example: Preprocessing a General Task](#an-example-preprocessing-a-general-task)
      *  [An Example: Preprocessing a New Dataset](#an-example-preprocessing-a-new-dataset)
 * [Training and Testing](#training-and-testing)
-     *  [An Example: Running a General Task](#an-example-running-a-general-task)
-     *  [An Example: Running a New Dataset](#an-example-running-a-new-dataset)
-* [Detailed Overview](#detailed-overview)
 
 ## Preprocessing a Dataset
 Preprocessing amounts to filtering (re-centering the signals to a base band based on their metadata) and equalization. Equalization only applies to WiFi signals, and is optional. Preprocessing also generates files needed by both training and testing; this is why all data needs to be preprocessed (whether WiFi, ADS-B, or a new type of dataset). 
