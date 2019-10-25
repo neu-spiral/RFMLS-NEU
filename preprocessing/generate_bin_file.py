@@ -1,3 +1,10 @@
+'''
+This source code was developed under the DARPA Radio Frequency Machine 
+Learning Systems (RFMLS) program contract N00164-18-R-WQ80. All the code 
+released here is unclassified and the Government has unlimited rights 
+to the code.
+'''
+
 import numpy as np
 import os
 import scipy.io as sio

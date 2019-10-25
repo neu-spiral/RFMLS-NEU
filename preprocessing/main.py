@@ -3,6 +3,8 @@ This source code was developed under the DARPA Radio Frequency Machine
 Learning Systems (RFMLS) program contract N00164-18-R-WQ80. All the code
 released here is unclassified and the Government has unlimited rights
 to the code.
+
+This scrpit handles the different preprocessing steps. 
 '''
 
 import argparse
@@ -11,6 +13,7 @@ import sys
 import time
 import subprocess
 from DataPreprocessor import extract_tsv, filteringFunctionWiFi, create_label, create_label_mb
+
 
 def main():
     '''Main function to handle the various preprocessing steps.'''

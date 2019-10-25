@@ -2,6 +2,11 @@
 # -*- coding: utf-8 -*-
 
 """
+This source code was developed under the DARPA Radio Frequency Machine 
+Learning Systems (RFMLS) program contract N00164-18-R-WQ80. All the code 
+released here is unclassified and the Government has unlimited rights 
+to the code.
+
 Created on Mon Aug  6 12:44:29 2018
 
 @author: shamnaz

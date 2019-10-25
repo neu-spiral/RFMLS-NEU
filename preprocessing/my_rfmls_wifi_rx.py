@@ -5,6 +5,13 @@
 # Generated: Tue Nov  6 15:07:26 2018
 ##################################################
 
+'''
+This source code was developed under the DARPA Radio Frequency Machine 
+Learning Systems (RFMLS) program contract N00164-18-R-WQ80. All the code 
+released here is unclassified and the Government has unlimited rights 
+to the code.
+'''
+
 from gnuradio import blocks
 from gnuradio import fft
 from gnuradio import gr
