@@ -4,37 +4,36 @@ Learning Systems (RFMLS) program contract N00164-18-R-WQ80. All the code
 released here is unclassified and the Government has unlimited rights 
 to the code.
 '''
-
-import tensorflow as tf
-import numpy as np
-from random import shuffle
+import DataGenerators.NewDataGenerator as DG
 import keras
-from keras.utils import np_utils
 import keras.models as models
-from keras.layers.core import Reshape, Dense, Dropout, Activation, Flatten
-from keras.layers.convolutional import Conv2D, MaxPooling2D, ZeroPadding2D, Conv1D, MaxPooling1D
-from keras.regularizers import l2
-from keras.models import load_model
-from keras.models import model_from_json
-from keras import backend as K
-from keras.optimizers import Adam
-from keras.callbacks import ModelCheckpoint, EarlyStopping
-from keras.utils import multi_gpu_model
-
-import scipy.io as spio
-import random
-import pickle
 import math
-import timeit
+import numpy as np
+import os
+import pickle
+import tensorflow as tf
+import random
+import scipy.io as spio
 import string
 import sys
-import os
+import timeit
 
-from get_device_results import get_device_results
-
-from MultiGPUModelCheckpoint import MultiGPUModelCheckpoint
 from CustomModelCheckpoint import CustomModelCheckpoint
 from evaluate_model import compute_accuracy
+from get_device_results import get_device_results
+from keras import backend as K
+from keras.callbacks import ModelCheckpoint, EarlyStopping
+from keras.layers.convolutional import Conv2D, MaxPooling2D, ZeroPadding2D, Conv1D, MaxPooling1D
+from keras.layers.core import Reshape, Dense, Dropout, Activation, Flatten
+from keras.models import load_model
+from keras.models import model_from_json
+from keras.optimizers import Adam
+from keras.regularizers import l2
+from keras.utils import multi_gpu_model
+from keras.utils import np_utils
+from MultiGPUModelCheckpoint import MultiGPUModelCheckpoint
+from random import shuffle
+
 
 def get_model(model_flag, params={}):
     # load model structure
@@ -194,7 +193,9 @@ class TrainValTest():
         # we get the rep_time_per_device and pass it to new generator
 
             max_num_ex_per_dev = max(ex_per_device.values())
-            self.rep_time_per_device = {dev: math.floor(max_num_ex_per_dev / num) if math.floor(max_num_ex_per_dev / num) <= 2000 else 2000 for dev,num in ex_per_device.items()}
+            self.rep_time_per_device = {dev: math.floor(max_num_ex_per_dev / num) \
+                                        if math.floor(max_num_ex_per_dev / num) <= 2000 \
+                                        else 2000 for dev,num in ex_per_device.items()}
         else:
             self.rep_time_per_device = {dev:1 for dev in self.device_ids.keys()}
 
@@ -205,6 +206,7 @@ class TrainValTest():
                     file_type='mat', early_stopping=False, patience=1, 
                     normalize=False, decimated=False, add_padding=False, 
                     try_concat=False, crop=0):
+        
         '''Function to train the model with the specified processor and generator.'''
         ex_list = self.ex_list[0:int(len(self.ex_list)*shrink)]
         val_list = self.val_list[0:int(len(self.val_list)*shrink)]
@@ -216,16 +218,6 @@ class TrainValTest():
         corr_fact = 1
         if decimated:
             corr_fact = 10
-
-        generator_type = generator_type.lower()
-        if generator_type == 'old':
-            import DataGenerators.DataGenerator as DG
-        elif generator_type == 'pipe':
-            import DataGenerators.DataGeneratorPipe as DG
-        elif generator_type == 'ult':
-            import DataGenerators.DataGeneratorUltimate as DG
-        elif generator_type == 'new':
-            import DataGenerators.NewDataGenerator as DG
 
         if training_strategy == 'small':
             rep_time_per_device = self.rep_time_per_device
@@ -239,8 +231,6 @@ class TrainValTest():
             processor = DG.IQTensorPreprocessor()
         elif processor_type =='fft':
             processor = DG.IQFFTPreprocessor()
-        elif processor_type =='add_axis':
-            processor = DG.AddAxisPreprocessor()
             
         if generator_type == 'new':
             data_mean = None
