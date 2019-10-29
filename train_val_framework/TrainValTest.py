@@ -1,10 +1,11 @@
-import tensorflow as tf
-# config = tf.ConfigProto()
-# config.gpu_options.allow_growth = True
-# session = tf.Session(config=config)
+'''
+This source code was developed under the DARPA Radio Frequency Machine 
+Learning Systems (RFMLS) program contract N00164-18-R-WQ80. All the code 
+released here is unclassified and the Government has unlimited rights 
+to the code.
+'''
 
-# from DataGenerator import IQDataGenerator
-# from DataGeneratorPipe import IQDataGenerator
+import tensorflow as tf
 import numpy as np
 from random import shuffle
 import keras
@@ -18,8 +19,6 @@ from keras.models import model_from_json
 from keras import backend as K
 from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint, EarlyStopping
-
-
 from keras.utils import multi_gpu_model
 
 import scipy.io as spio
@@ -30,6 +29,8 @@ import timeit
 import string
 import sys
 import os
+
+from get_device_results import get_device_results
 
 from MultiGPUModelCheckpoint import MultiGPUModelCheckpoint
 from CustomModelCheckpoint import CustomModelCheckpoint
@@ -86,12 +87,23 @@ def get_model(model_flag, params={}):
 
 
 class TrainValTest():
-    def __init__(self, base_path = '', stats_path = '', save_path = '', multigpu=True, num_gpu=8, val_from_train = False):
+    '''
+    Class in charge of handling train and testing phases of the model.
+    Inputs: 
+        - base_path: base path containing pickle files
+        - stats_path: path containing statistics pickle file.
+        - save_path: path to save experiment weights and logs
+        - multigpu: enable multiple distributed GPUs
+        - num_gpu: number of distributed GPUs if --multigpu is True
+        - val_from_train: enable to use validation from train set
+    '''
+    def __init__(self, base_path, stats_path, save_path,
+                 multigpu=True, num_gpu=8, val_from_train = False):
         self.model = None
         self.base_path = base_path
         self.stats_path = stats_path
         self.save_path = save_path
-        self.best_model_path = ''
+        self.best_model_path = None
         self.multigpu = multigpu
         self.num_gpu = num_gpu
         self.val_from_train = val_from_train
@@ -107,15 +119,15 @@ class TrainValTest():
         # save the model structure first
         model_json = self.model.to_json()
         print('*************** Saving New Model Structure ***************')
-        with open(os.path.join(self.save_path, "%s_model.json" % model_flag), "w") as json_file:
+        with open(os.path.join(self.save_path, 
+                               "%s_model.json" % model_flag), "w") as json_file:
             json_file.write(model_json)
             print("json file written")
             print(os.path.join(self.save_path, "%s_model.json" % model_flag))
 
        
-    # loading the model structure from json file
-    def load_model_structure(self, slice_size, classes, model_path=''):
-        # reading model from json file
+    def load_model_structure(self, slice_size, classes, model_path):
+        '''Loading model structure from json file.'''
         json_file = open(model_path, 'r')
         model = model_from_json(json_file.read())
         json_file.close()
@@ -124,7 +136,7 @@ class TrainValTest():
         self.classes = classes
 
 
-    def load_weights(self, weight_path = '', by_name=False):
+    def load_weights(self, weight_path, by_name=False):
         self.model.load_weights(weight_path, by_name=by_name)
 
         # extracting epoch number
@@ -135,6 +147,7 @@ class TrainValTest():
         except:
             self.epoch_number = 0
 
+            
     def load_data(self, sampling):
         file = open(os.path.join(self.base_path, "label.pkl"),'r')
         self.labels = pickle.load(file)
@@ -168,7 +181,8 @@ class TrainValTest():
                 self.val_list = self.partition['test']
         self.test_list = self.partition['test']
 
-        print "# of training exp:%d, validation exp:%d, testing exp:%d" % (len(self.ex_list), len(self.val_list), len(self.test_list))
+        print "# of training exp:%d, validation exp:%d, testing exp:%d" % \
+        (len(self.ex_list), len(self.val_list), len(self.test_list))
         
         # add for calculating balanced sampling
         if sampling.lower() == 'balanced':
@@ -184,12 +198,14 @@ class TrainValTest():
         else:
             self.rep_time_per_device = {dev:1 for dev in self.device_ids.keys()}
 
-    def train_model(self, batch_size, K, files_per_IO, cont = False, \
-                     lr=0.002, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False, epochs=10, \
-                     generator_type='new', processor_type='no', shrink = 1.0, training_strategy = 'big', file_type='mat', \
-                    early_stopping=False, patience=1, normalize=False, decimated=False, \
-                    add_padding=False, try_concat=False, crop=0):
-        
+    def train_model(self, batch_size, K, files_per_IO, cont=False, 
+                    lr=0.002, beta_1=0.9, beta_2=0.999, epsilon=None, 
+                    decay=0.0, amsgrad=False, epochs=10, generator_type='new',
+                    processor_type='no', shrink=1.0, training_strategy='big',
+                    file_type='mat', early_stopping=False, patience=1, 
+                    normalize=False, decimated=False, add_padding=False, 
+                    try_concat=False, crop=0):
+        '''Function to train the model with the specified processor and generator.'''
         ex_list = self.ex_list[0:int(len(self.ex_list)*shrink)]
         val_list = self.val_list[0:int(len(self.val_list)*shrink)]
         labels = self.labels
@@ -202,7 +218,14 @@ class TrainValTest():
             corr_fact = 10
 
         generator_type = generator_type.lower()
-        import DataGenerators.NewDataGenerator as DG
+        if generator_type == 'old':
+            import DataGenerators.DataGenerator as DG
+        elif generator_type == 'pipe':
+            import DataGenerators.DataGeneratorPipe as DG
+        elif generator_type == 'ult':
+            import DataGenerators.DataGeneratorUltimate as DG
+        elif generator_type == 'new':
+            import DataGenerators.NewDataGenerator as DG
 
         if training_strategy == 'small':
             rep_time_per_device = self.rep_time_per_device
@@ -219,41 +242,67 @@ class TrainValTest():
         elif processor_type =='add_axis':
             processor = DG.AddAxisPreprocessor()
             
-        # DataGenerator for training and testing datasets
-        data_mean = None
-        data_std = None
-        if stats.has_key('mean') and stats.has_key('std'):
-            data_mean = stats['mean']
-            data_std = stats['std']
+        if generator_type == 'new':
+            data_mean = None
+            data_std = None
+            if stats.has_key('mean') and stats.has_key('std'):
+                data_mean = stats['mean']
+                data_std = stats['std']
 
-        train_generator = DG.IQPreprocessDataGenerator(ex_list, labels, device_ids, stats['avg_samples'] * len(ex_list) / corr_fact, processor, len(device_ids), files_per_IO=files_per_IO, slice_size=slice_size, K=K, batch_size=batch_size, normalize=normalize, mean_val=data_mean, std_val=data_std,  rep_time_per_device = rep_time_per_device, file_type=file_type, add_padding=add_padding, try_concat=try_concat, crop=crop)
-        val_generator = DG.IQPreprocessDataGenerator(val_list, labels, device_ids, stats['avg_samples'] * len(val_list) / corr_fact, processor, len(device_ids), files_per_IO=files_per_IO, slice_size=slice_size, K=K, batch_size=batch_size, normalize=normalize, mean_val=data_mean, std_val=data_std, rep_time_per_device = rep_time_per_device, file_type=file_type, add_padding=add_padding, try_concat=try_concat, crop=crop)
-        
+            train_generator = DG.IQPreprocessDataGenerator(ex_list, False, labels,
+                device_ids, stats['avg_samples'] * len(ex_list) / corr_fact, processor,
+                len(device_ids), files_per_IO=files_per_IO, slice_size=slice_size, K=K,
+                batch_size=batch_size, normalize=normalize, mean_val=data_mean,
+                std_val=data_std, rep_time_per_device=rep_time_per_device,
+                file_type=file_type, add_padding=add_padding, padding_type='zero',
+                try_concat=try_concat, crop=crop)
+            
+            val_generator = DG.IQPreprocessDataGenerator(val_list, True, labels,
+                device_ids, stats['avg_samples'] * len(val_list) / corr_fact,
+                processor, len(device_ids), files_per_IO=files_per_IO,
+                slice_size=slice_size, K=K, batch_size=batch_size,
+                normalize=normalize, mean_val=data_mean, std_val=data_std,
+                rep_time_per_device=rep_time_per_device, file_type=file_type,
+                add_padding=add_padding, try_concat=try_concat, crop=crop)
+        else:
+            train_generator = DG.IQPreprocessDataGenerator(
+                ex_list, labels, device_ids, stats['avg_samples']*len(ex_list)/corr_fact,
+                processor, len(device_ids), files_per_IO=files_per_IO, slice_size=slice_size,
+                K=K, batch_size=batch_size)
+            
+            val_generator = DG.IQPreprocessDataGenerator(
+                val_list, labels, device_ids, stats['avg_samples']*len(val_list)/corr_fact,
+                processor, len(device_ids), files_per_IO=files_per_IO, slice_size=slice_size,
+                K=K, batch_size=batch_size)
+            
+        save_path = self.save_path
+
         checkpoint = None
 
         num_gpu = len(os.environ['CUDA_VISIBLE_DEVICES'].split(','))
         print 'num gpu: ', num_gpu
+        optimizer = Adam(lr=lr, beta_1=beta_1, beta_2=beta_2, epsilon=epsilon, 
+                         decay=decay, amsgrad=amsgrad)
     
         if self.multigpu:
             cpu_net = None
             with tf.device("/cpu:0"):
-                cpu_net = self.model # the model should live into the CPU and is then updated with the results of the GPUs
+                cpu_net = self.model
                 
                 net = multi_gpu_model(cpu_net, gpus=num_gpu)
-                net.compile(loss='categorical_crossentropy', 
-                            optimizer=Adam(lr=lr, beta_1=beta_1, beta_2=beta_2, epsilon=epsilon, decay=decay, amsgrad=amsgrad), 
+                net.compile(loss='categorical_crossentropy',
+                            optimizer=optimizer,
                             metrics=['accuracy'])
-                
                 call_backs = []
-                checkpoint = MultiGPUModelCheckpoint(os.path.join(save_path, "weights.hdf5"), 
-                                                     cpu_net, 
-                                                     monitor='val_acc', 
-                                                     verbose=1, 
-                                                     save_best_only=True)
+                checkpoint = MultiGPUModelCheckpoint(
+                    os.path.join(save_path, "weights.hdf5"), cpu_net,
+                    monitor='val_acc', verbose=1, save_best_only=True)
                 call_backs.append(checkpoint)
 
                 if early_stopping:
-                    earlystop_callback = EarlyStopping(monitor='val_acc', min_delta=0, patience=patience, verbose=1, mode='auto')
+                    earlystop_callback = EarlyStopping(
+                        monitor='val_acc', min_delta=0,
+                        patience=patience,verbose=1, mode='auto')
                     call_backs.append(earlystop_callback)
 
                 # add initial epoch number
@@ -267,20 +316,21 @@ class TrainValTest():
                     callbacks=call_backs,
                     initial_epoch=init_epoch)
         else:
-            cpu_net = self.model #getModel(self.slice_size, len(self.device_ids))
-            cpu_net.compile(loss='categorical_crossentropy', 
-                            optimizer=Adam(lr=lr, beta_1=beta_1, beta_2=beta_2, epsilon=epsilon, decay=decay, amsgrad=amsgrad), 
+            cpu_net = self.model 
+            cpu_net.compile(loss='categorical_crossentropy',
+                            optimizer=optimizer,
                             metrics=['accuracy'])
 
             call_backs = []
-            checkpoint = CustomModelCheckpoint(os.path.join(save_path, "weights.hdf5"), 
-                                               monitor='val_acc', 
-                                               verbose=1, 
-                                               save_best_only=True)
+            checkpoint = CustomModelCheckpoint(
+                os.path.join(save_path, "weights.hdf5"),
+                monitor='val_acc', verbose=1, save_best_only=True)
             call_backs.append(checkpoint)
 
             if early_stopping:
-                earlystop_callback = EarlyStopping(monitor='val_acc', min_delta=0, patience=patience, verbose=1, mode='auto')
+                earlystop_callback = EarlyStopping(
+                    monitor='val_acc', min_delta=0, patience=patience,
+                    verbose=1, mode='auto')
                 call_backs.append(earlystop_callback)
             # add initial epoch number
             init_epoch = self.epoch_number if cont else 0
@@ -296,28 +346,49 @@ class TrainValTest():
 
         self.best_model_path = checkpoint.best_path
 
-    def test_model(self, slice_size, shrink=1,batch_size=16, vote_type='majority', processor=None, test_stride=1, file_type='mat', normalize=False, add_padding=False, crop=0):
-        
-        # load testing data
+    def test_model(self, slice_size, shrink=1, batch_size=16, vote_type='majority',
+                   processor=None, test_stride=1, file_type='mat', normalize=False,
+                   add_padding=False, flag_error_analysis=True, figure_path='./Output/',
+                   crop=0, save_predictions=False, compute_confusion_matrix=False, get_device_acc=0):
+        '''
+        Test model performance on unseen dataset and evaluate with
+        specified method. 
+        '''
         test_list = self.test_list[0:int(len(self.test_list)*shrink)]
         labels = self.labels
         device_ids = self.device_ids
         
-        # load pre-trained model
         cpu_net = self.model
         if self.multigpu:
             net = multi_gpu_model(cpu_net, gpus=self.num_gpu)
         else:
             net = cpu_net
 
-        # get data statistics
         data_mean = None
         data_std = None
         if self.stats.has_key('mean') and self.stats.has_key('std'):
             data_mean = self.stats['mean']
             data_std = self.stats['std']
-            
-        # do the job!
-        acc_slice, acc_ex, preds = compute_accuracy(ex_list=test_list, labels=labels, device_ids=device_ids, slice_size=slice_size, model=net, batch_size = batch_size, vote_type=vote_type, processor=processor, test_stride=test_stride, file_type=file_type, normalize=normalize, mean_val=data_mean, std_val=data_std, add_padding=add_padding, crop=crop)
         
+        acc_slice, acc_ex, preds = compute_accuracy(ex_list=test_list, labels=labels,
+                                                    device_ids=device_ids, slice_size=slice_size,
+                                                    model=net, batch_size = batch_size,
+                                                    vote_type=vote_type, processor=processor,
+                                                    test_stride=test_stride, file_type=file_type,
+                                                    normalize=normalize, mean_val=data_mean,
+                                                    std_val=data_std, add_padding=add_padding,
+                                                    crop=crop)
+        
+
+        # save predictions to the pickle file
+        if save_predictions:
+            preds_pickle_file = self.save_path + "/" + "preds.pkl"
+            with open(preds_pickle_file,'wb') as fp:
+                pickle.dump(preds,fp)
+
+        # compute confusion matrix from predictions
+        if compute_confusion_matrix or get_device_acc:
+            get_device_results(self.base_path, preds, vote_type, self.save_path, get_device_acc, True)
+
+
         return acc_slice, acc_ex, preds
