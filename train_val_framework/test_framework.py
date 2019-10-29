@@ -310,9 +310,6 @@ def parse_arguments():
     parser.add_argument('--load_by_name', action='store_true',
                         help='Enable to only load weights by name.')
     
-    parser.add_argument('--generator', default='ult', type=str, metavar='', 
-                        help='Set generator type to use.')
-    
     parser.add_argument('--add_padding', action='store_true',
                         help='Enable to add zero-padding if examples are smaller than slice size.')
     
