@@ -33,7 +33,7 @@ def set_params(args):
         for key in saved_params:
             try:
                 args[key] = saved_params[key]
-            else:
+            except:
                 continue
     return
     print 'Restoring parameters from config file.'
@@ -92,21 +92,22 @@ def main():
     if not os.path.exists(os.path.join(args.save_path, args.exp_name)):
         os.makedirs(os.path.join(args.save_path, args.exp_name))
 
-    if len(args.restore_params_from):
+    if args.restore_params_from:
         set_params(args)
 
     makedirs(args.save_path)
-    makedirs(os.path.join(args.save_path, args.exp_name))
+    save_path = os.path.join(args.save_path, args.exp_name)
+    makedirs(save_path)
 
-    json_file = os.path.join(save_path_exp, args.exp_name+'.json')
+    json_file = os.path.join(save_path, args.exp_name+'.json')
     print("*************** Saving Model Parameters ***************")
-    with open(setting_file, 'w') as f:
+    with open(json_file, 'w') as f:
         json.dumps(vars(args))
 
     print('*************** Framework Initialized ***************')
     pipeline = TrainValTest(base_path=args.base_path,
                             stats_path=args.stats_path,
-                            save_path=save_path_exp,
+                            save_path=save_path,
                             multigpu=args.multigpu,
                             num_gpu=args.num_gpu,
                             val_from_train=args.val_from_train)
@@ -227,70 +228,90 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description = 'Train and Validation pipeline',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument('--exp_name', default='exp1', type=str, help='Experiment name.')
+    parser.add_argument('--exp_name', default='exp1', type=str, 
+                        help='Experiment name.', metavar='')
     
-    parser.add_argument('--base_path', type=str, help='Base path containing pickle files.')
+    parser.add_argument('--base_path', type=str, 
+                        help='Base path containing pickle files.', metavar='')
     
-    parser.add_argument('--stats_path', type=str, help='Path containing statistics pickle file.')
+    parser.add_argument('--stats_path', type=str, metavar='', 
+                        help='Path containing statistics pickle file.')
     
-    parser.add_argument('--save_path', type=str, help='Path to save experiment weights and logs.')
+    parser.add_argument('--save_path', type=str, metavar='', 
+                        help='Path to save experiment weights and logs.')
     
-    parser.add_argument('--save_predictions', action='store_true', help='Enable to save model predictions.')
+    parser.add_argument('--save_predictions', action='store_true',
+                        help='Enable to save model predictions.')
     
-    parser.add_argument('--task', default="1Cv2", type=str, help='Set experiment task.')
+    parser.add_argument('--task', default="1Cv2", type=str, metavar='', 
+                        help='Set experiment task.')
     
-    parser.add_argument('--equalize', action='store_true', help='Enable to use equalized WiFi data.')
+    parser.add_argument('--equalize', action='store_true',
+                        help='Enable to use equalized WiFi data.')
     
-    parser.add_argument('--data_type', default='wifi', type=str, help='Set the data type.')
+    parser.add_argument('--data_type', default='wifi', type=str, metavar='', 
+                        help='Set the data type.')
     
-    parser.add_argument('--file_type', default='mat', type=str, help='Set data file format.')
+    parser.add_argument('--file_type', default='mat', type=str, metavar='', 
+                        help='Set data file format.')
     
     parser.add_argument('--decimated', action='store_true',
-                        help='Enable if the data in the files is decimated.)
+                        help='Enable if the data in the files is decimated.')
 
     parser.add_argument('--val_from_train', action='store_true', 
                         help='If validation not present in partition file, generate one from the training set. \
                         (If false, use test set as validation).')
     
-    parser.add_argument('-m', '--model_flag', default='baseline', type=str, help='Define model architecture.')
+    parser.add_argument('-m', '--model_flag', default='baseline', type=str, metavar='', 
+                        help='Define model architecture.')
     
-    parser.add_argument('-ss', '--slice_size', default=1024, type=int, help='Set slice size.')
+    parser.add_argument('-ss', '--slice_size', default=1024, type=int, metavar='', 
+                        help='Set slice size.')
     
-    parser.add_argument('-d', '--devices', default=100, type=int, help='Set number of total devices.')
+    parser.add_argument('-d', '--devices', default=100, type=int, metavar='', 
+                        help='Set number of total devices.')
     
-    parser.add_argument('--cnn_stack', default=3, type=int, help='[Baseline Model] Set number of cnn layers.')
+    parser.add_argument('--cnn_stack', default=3, type=int, metavar='', 
+                        help='[Baseline Model] Set number of cnn layers.')
     
-    parser.add_argument('--fc_stack', default=2, type=int, help='[Baseline Model] Set number of fc layers.')
+    parser.add_argument('--fc_stack', default=2, type=int, metavar='', 
+                        help='[Baseline Model] Set number of fc layers.')
     
-    parser.add_argument('--channels', default=128, type=int, help='[Baseline Model] Set number of channels of cnn.')
+    parser.add_argument('--channels', default=128, type=int, metavar='', 
+                        help='[Baseline Model] Set number of channels of cnn.')
     
-    parser.add_argument('--fc1', default=256, type=int,
+    parser.add_argument('--fc1', default=256, type=int, metavar='', 
                         help='[Baseline Model] Set number of neurons in the first fc layer.')
     
-    parser.add_argument('--fc2', default=128, type=int,
+    parser.add_argument('--fc2', default=128, type=int, metavar='', 
                         help='[Baseline Model] Set number of neurons in the penultimate fc layer.')
     
-    parser.add_argument('--dropout_flag', action='store_true', help='Enable to use dropout layers.')
+    parser.add_argument('--dropout_flag', action='store_true', 
+                        help='Enable to use dropout layers.')
     
-    parser.add_argument('--batchnorm', action='store_true', help='Enable to use batch normalization.')
+    parser.add_argument('--batchnorm', action='store_true',
+                        help='Enable to use batch normalization.')
     
-    parser.add_argument('--pre_weight', default='', type=str, help='Enable if loading pretrained weights.')
+    parser.add_argument('--pre_weight', default='', type=str, metavar='',
+                        help='Enable if loading pretrained weights.')
     
-    parser.add_argument('-c', '--cont', action='store_true', help='Enable to continue training/testing.')
+    parser.add_argument('-c', '--cont', action='store_true', 
+                        help='Enable to continue training/testing.')
 
-    parser.add_argument('-rsm', '--restore_model_from', type=str, default=None,
+    parser.add_argument('--restore_model_from', type=str, default=None, metavar='',
                         help='Path from where to load model structure.')
     
-    parser.add_argument('-rsw', '--restore_weight_from', type=str, default=None,
+    parser.add_argument('--restore_weight_from', type=str, default=None, metavar='',
                         help='Path from where to load model weights.')
     
-    parser.add_argument('-rsp', '--restore_params_from', default=None, type=str,
+    parser.add_argument('--restore_params_from', default=None, type=str, metavar='',
                         help='Path from where to load model parameters.')
     
-    parser.add_argument('-byname', '--load_by_name', action='store_true',
+    parser.add_argument('--load_by_name', action='store_true',
                         help='Enable to only load weights by name.')
     
-    parser.add_argument('--generator', default='ult', type=str, help='Set generator type to use.')
+    parser.add_argument('--generator', default='ult', type=str, metavar='', 
+                        help='Set generator type to use.')
     
     parser.add_argument('--add_padding', action='store_true',
                         help='Enable to add zero-padding if examples are smaller than slice size.')
@@ -299,67 +320,79 @@ def parse_arguments():
                         help='Enable if examples are smaller than slice size and using demodulated data, \
                         try and concat them.')
     
-    parser.add_argument('--preprocessor', default='no', type=str, help='Set preprocessor type to use.')
+    parser.add_argument('--preprocessor', default='no', type=str, metavar='',
+                        help='Set preprocessor type to use.')
     
-    parser.add_argument('--K', default=1, type=int, help='Set batch down sampling factor K.')
+    parser.add_argument('--K', default=1, type=int, metavar='',
+                        help='Set batch down sampling factor K.')
     
-    parser.add_argument('-fpio', '--files_per_IO', default=500000, type = int,
+    parser.add_argument('--files_per_IO', default=500000, type = int, metavar='',
                         help='Set files loaded to memory per IO.')
 
-    parser.add_argument('--normalize', default='True', type=str2bool,
+    parser.add_argument('--normalize', action='store_true', 
                         help='Specify if you want to normalize the data using mean and std in \
                         stats files (if stats does not have this info, it is ignored).')
     
-    parser.add_argument('--crop', default=0, type=int,
+    parser.add_argument('--crop', default=0, type=int, metavar='', 
                         help='Set to keep first "crop" samples.')
 
-    parser.add_argument('--training_strategy', default='big', type=str,
+    parser.add_argument('--training_strategy', default='big', type=str, metavar='', 
                         help='Set training strategy to use.')
     
-    parser.add_argument('--sampling', default='model', type=str,
+    parser.add_argument('--sampling', default='model', type=str, metavar='', 
                         help='Set sampling strategy to use.')
 
-    parser.add_argument('--epochs', default=10, type = int, help='Set epochs to train.')
+    parser.add_argument('--epochs', default=10, type = int, metavar='', 
+                        help='Set epochs to train.')
     
-    parser.add_argument('-bs', '--batch_size', default=64, type = int, help='Set batch size.')
+    parser.add_argument('-bs', '--batch_size', default=64, type = int, metavar='', 
+                        help='Set batch size.')
     
-    parser.add_argument('--lr', default=0.0001, type=float, help='Set optimizer learning rate.')
+    parser.add_argument('--lr', default=0.0001, type=float, metavar='', 
+                        help='Set optimizer learning rate.')
     
-    parser.add_argument('--decay', default=0.0, type=float, help='Set optimizer weight decay.')
+    parser.add_argument('--decay', default=0.0, type=float, metavar='', 
+                        help='Set optimizer weight decay.')
     
-    parser.add_argument('-mg', '--multigpu', action='store_true', help='Enable multiple distributed GPUs.')
+    parser.add_argument('-mg', '--multigpu', action='store_true', 
+                        help='Enable multiple distributed GPUs.')
     
-    parser.add_argument('-ng', '--num_gpu', default=8, type=int, 
+    parser.add_argument('-ng', '--num_gpu', default=8, type=int, metavar='', 
                         help='Set number of distributed GPUs if --multigpu enabled.')
 
-    parser.add_argument('--id_gpu', default=0, type=int,
+    parser.add_argument('--id_gpu', default=0, type=int, metavar='', 
                         help='Set GPU ID to use.')
     
-    parser.add_argument('--shrink', default=1, type=float, help='Set down sampling factor.')
+    parser.add_argument('--shrink', default=1, type=float, metavar='', 
+                        help='Set down sampling factor.')
     
     parser.add_argument('--early_stopping', action='store_true',
                         help='Enable for early stopping.')
     
-    parser.add_argument('--patience', default=1, type=int,
+    parser.add_argument('--patience', default=1, type=int, metavar='', 
                         help='Set number of epochs for early stopping patience.')
 
-    parser.add_argument('--train', action='store_true', help='Enable to train model.')
+    parser.add_argument('--train', action='store_true', 
+                        help='Enable to train model.')
     
-    parser.add_argument('-t', '--test', action='store_true', help='Enable to test model.')
+    parser.add_argument('-t', '--test', action='store_true',
+                        help='Enable to test model.')
     
-    parser.add_argument('--test_stride', default=16, type=int, help='Set stride to use for testing.')
+    parser.add_argument('--test_stride', default=16, type=int, metavar='', 
+                        help='Set stride to use for testing.')
 
-    parser.add_argument('--per_example_strategy', default='prob_sum', type=str,
+    parser.add_argument('--per_example_strategy', default='prob_sum', type=str, metavar='',
                         help='Set the strategy used to compute the per example accuracy \
                         {majority, prob_sum, log_prob_sum, all}.')
     
-    parser.add_argument('--flag_error_analysis', action='store_true', help='Enable for error analysis.')
+    parser.add_argument('--flag_error_analysis', action='store_true',
+                        help='Enable for error analysis.')
     
     parser.add_argument('--confusion_matrix', action='store_true',
                         help='Enable to save a confusion matrix in pickle format \
                         and to save a confusion matrix plot.')
     
-    parser.add_argument('--get_device_acc', type=int, default=0,
+    parser.add_argument('--get_device_acc', type=int, default=0, metavar='',
                         help='Report and save number of top class candidates for each example.')
     
     parser.add_argument('--time_analysis', action='store_true',
