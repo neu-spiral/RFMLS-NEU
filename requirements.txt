@@ -1,0 +1,8 @@
+tensorflow-gpu==1.10.0
+keras==2.2.0
+tqdm
+numpy==1.16.0
+pathlib
+scipy==1.2.1
+scikit-learn==0.20.4
+matplotlib==2.2.3
