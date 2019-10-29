@@ -203,7 +203,7 @@ class extract_tsv():
 
 class filteringFunctionWiFi():
     '''
-    Filter signals
+    Generate digital filter from signal metadata and filter raw transmitted signals.
     '''
     def __init__(self, base_path, datatype, signal_BW_useful=None, num_guard_samp=2e-6):
         self.base_path = os.path.join(base_path, datatype)
@@ -286,7 +286,7 @@ class filteringFunctionWiFi():
         
         # Design Filter 10MHz wide + bandguard
         fcuts = [signal_BW_wifi_singleside,
-                 signal_BW_wifi_singleside+self.percentage_guardband_include_filter\
+                 signal_BW_wifi_singleside+self.percentage_guardband_include_filter \
                  *signal_BW_wifi_singleside]
         width = fcuts[1] - fcuts[0]
         cutoff = fcuts[0] + width/2
@@ -339,7 +339,7 @@ class filteringFunctionWiFi():
             
 class create_label():
     '''
-    Create labels and partition files for training process
+    Create labels and partition files for training process.
     Input:
         -task_tsv: train.tsv and test.tsv which contain example name
         -task_list: tasks with pre-definied device_ids{device_name -> device id}
@@ -447,7 +447,7 @@ class create_label():
 
     def create_save_partition(self, label_path):
         '''
-        Create and save generated partition files
+        Gather data files and generated partition files
         Input:
             -dir_list: all files needs to be generated 
             -datatype: .mat
@@ -559,8 +559,9 @@ class create_label():
     def run(self, wifi_eq=False, newtype=False, newtype_filter=False):
         print 'generating files for WiFi, ADS-B and mixed dataset'
         file_list_wifi = generate_files(os.path.join(self.base_path, 'wifi'),
-                                        self.base_path.count(os.path.sep)+4,
+                                        self.base_path.count(os.path.sep)+3,
                                         '/*_filtered.mat')
+        print os.path.join(self.base_path, 'wifi')
         file_list_adsb = generate_files(os.path.join(self.base_path, 'ADS-B'),
                                         self.base_path.count(os.path.sep)+2,
                                         '/*.mat')
