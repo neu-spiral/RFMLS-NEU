@@ -1,3 +1,10 @@
+'''
+This source code was developed under the DARPA Radio Frequency Machine 
+Learning Systems (RFMLS) program contract N00164-18-R-WQ80. All the code 
+released here is unclassified and the Government has unlimited rights 
+to the code.
+'''
+
 import numpy as np
 import collections
 import scipy.io as spio
@@ -89,6 +96,8 @@ def compute_accuracy(ex_list, labels, device_ids, slice_size, model, batch_size=
         if vote_type == 'log_prob_sum': # it is probably different, but I don0t remember the formula...
             log_preds = np.log(preds)
             tot_prob = log_preds.sum(axis=0)
+            #print tot_prob
+            #print tot_prob, ', ', np.argmax(tot_prob), ', ', real_label
             predicted_class = np.argmax(tot_prob)
             if predicted_class == real_label:
                 correct_examples = correct_examples + 1

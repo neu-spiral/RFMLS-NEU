@@ -104,6 +104,8 @@ class IQDataGenerator(keras.utils.Sequence):
             from file_reader import read_file_mat as read_file
         elif file_type.lower() == 'pickle':
             from file_reader import read_file
+        elif file_type.lower() == 'fft':
+            from file_reader import read_file_mat_fft as read_file
         else:
             raise Exception('File not support!')
 
@@ -296,7 +298,7 @@ class IQPreprocessor:
     The method process should be overwritten by the subclasses.
 
     """
-    def process(self, X):
+    def process(self, X, val_mode):
         """Abstract method tha subclasses should overwrite.
 
         Args:
@@ -317,7 +319,7 @@ class IQTensorPreprocessor(IQPreprocessor):
     - I * Q.T (slice_size x slice_size)
 
     """
-    def process(self, X):
+    def process(self, X, val_mode):
         """Method that processes the batch with the Tensor technique
 
         Args:
@@ -341,13 +343,80 @@ class IQTensorPreprocessor(IQPreprocessor):
             X_processed[i, :, :, 2] = np.expand_dims(x0, axis=-1) * np.transpose(np.expand_dims(x1, axis=-1))
         return X_processed
 
+class IQFIRPreprocessor(IQPreprocessor):
+    """Subclass of the IQPreprocessor class, to be used with the IQPreprocessDataGenerator.
+
+    It generates a tensor with shape (batch_size, slice_size, 2) 
+    It passes the input tensor through a Complex FIR filter and gives out the filtered signal, as a tensor with the same size as input. 
+    """
+    def __init__(self, fir_type, test_mode, gaussian_filter):
+        self.fir_preprocess_type = fir_type
+	self.gaussian_filter = gaussian_filter
+	self.test_mode = test_mode
+	
+    def process(self, X, val_mode):
+	
+	if self.fir_preprocess_type=='gaussian' or self.fir_preprocess_type=='identity':
+            gaussian_filter = np.random.normal(loc=0.045, scale=np.sqrt(0.0434), size=(11,2))
+	
+	    if self.test_mode:
+	        gaussian_filter = self.gaussian_filter
+
+	    batch_size = X.shape[0]
+	    slice_size = X.shape[1]
+	
+	    Identity_filter = np.zeros((11,2))
+	    middle_FIR = int(Identity_filter.shape[0]/2)
+	    Identity_filter[middle_FIR,0] = 1
+        
+	    if self.fir_preprocess_type == 'identity' or val_mode:
+	        FIR_filter = Identity_filter
+	    elif self.fir_preprocess_type == 'gaussian':
+	        FIR_filter = gaussian_filter
+	
+	    FIR_real = FIR_filter[:,0]
+	    FIR_imag = FIR_filter[:,1]
+	    X_filtered = np.zeros(X.shape)
+    	    for i in range (0, batch_size):
+                X_real = X[i,:,0]
+                X_imag = X[i,:,1]
+                real = np.convolve(X_real, FIR_real, 'same') - np.convolve(X_imag, FIR_imag, 'same')
+                imag = np.convolve(X_real, FIR_imag, 'same') + np.convolve(X_imag, FIR_real, 'same')
+                filtered_slice = np.transpose(np.stack([real, imag]))
+                X_filtered[i,:,:] = filtered_slice
+	
+		
+	elif self.test_mode and self.fir_preprocess_type == 'multiple_gaussian':
+	    """if you choose multiple_gaussian in test mode, this if statement will take input batch with size (num_slice,slice_size,2) and generates (num_slice*gaussian_per_slice,slice_size,2) and returns it to be fed to the model.predict"""
+	    num_slices = X.shape[0]
+	    slice_size = X.shape[1]
+	    gaussian_per_slice = 5
+	    X_filtered = np.zeros((num_slices*gaussian_per_slice,slice_size,2))
+	    next_slice_index = 0
+	    """print "Inside data generator"
+	    print "num_of slices: " +str(num_slices)
+	    print "gaussian_per_slice: " +str(gaussian_per_slice)
+	    print "shape of X_filtered: " +str(X_filtered.shape)"""
+	    for i in range (num_slices):
+		X_real = X[i,:,0]
+		X_imag = X[i,:,1]
+		for j in range (gaussian_per_slice):
+        	    gaussian_filter = np.random.normal(loc=0.045, scale=np.sqrt(0.0434), size=(11,2))
+		    FIR_real,FIR_imag = gaussian_filter[:,0],gaussian_filter[:,1]
+            	    real = np.convolve(X_real, FIR_real, 'same') - np.convolve(X_imag, FIR_imag, 'same')
+            	    imag = np.convolve(X_real, FIR_imag, 'same') + np.convolve(X_imag, FIR_real, 'same')
+                    X_filtered[next_slice_index,:,:] = np.transpose(np.stack([real, imag]))
+		    next_slice_index += 1
+	
+	return X_filtered
+
 class IQFFTPreprocessor(IQPreprocessor):
     """Subclass of the IQPreprocessor class, to be used with the IQPreprocessDataGenerator.
 
     It generates a tensor with shape (batch_size, slice_size, 2) where each element is the fft of the original slice.
 
     """
-    def process(self, X):
+    def process(self, X, val_mode):
         """Method that processes the batch with the FFT technique
 
         Args:
@@ -377,11 +446,10 @@ class IQConstellationPreprocessor(IQPreprocessor):
     It generates a tensor with shape (batch_size, slice_size, 2) where each element is the fft of the original slice.
 
     """
-
     def __init__(self, size):
         self.size = size
 
-    def process(self, X):
+    def process(self, X, val_mode):
         """Method that processes the batch with the FFT technique
 
         Args:
@@ -408,7 +476,7 @@ class IQScramblePreprocessor(IQPreprocessor):
     It generates a tensor with shape (batch_size, slice_size, 2) where each element is the scrambled original slice.
 
     """
-    def process(self, X):
+    def process(self, X, val_mode):
         """Method that processes the batch with the Scramble technique
 
         Args:
@@ -428,7 +496,7 @@ class AddAxisPreprocessor(IQPreprocessor):
     It generates a tensor with shape (batch_size, slice_size, 2) where each element is the scrambled original slice.
 
     """
-    def process(self, X):
+    def process(self, X, val_mode):
         """Method that processes the batch with the Scramble technique
 
         Args:
@@ -453,7 +521,7 @@ class IQPreprocessDataGenerator(IQDataGenerator):
         preprocessor (IQPreprocessor): the preprocessor object to which the computation is delegated through a strategy design pattern.
 
     """
-    def __init__(self, ex_list, labels, device_ids, total_samples, preprocessor, num_classes, batch_size=1024, slice_size=64, files_per_IO=1000000, K=None, normalize=False, mean_val=None, std_val=None, equalize_amplitute=False, rep_time_per_device=None, file_type='mat', add_padding=False, padding_type='zero',try_concat=False, print_skipped=True, crop=0):
+    def __init__(self, ex_list, val_mode, labels, device_ids, total_samples, preprocessor, num_classes, batch_size=1024, slice_size=64, files_per_IO=1000000, K=None, normalize=False, mean_val=None, std_val=None, equalize_amplitute=False, rep_time_per_device=None, file_type='mat', add_padding=False, padding_type='zero',try_concat=False, print_skipped=True, crop=0):
         """Init method of this class.
 
         Calls the super init method and assigns the preprocessor attribute.
@@ -466,6 +534,8 @@ class IQPreprocessDataGenerator(IQDataGenerator):
 
         IQDataGenerator.__init__(self, ex_list, labels, device_ids, total_samples, num_classes, batch_size, slice_size, files_per_IO, K, normalize, mean_val, std_val, equalize_amplitute, rep_time_per_device, file_type, add_padding, padding_type, try_concat, print_skipped, crop)
         self.preprocessor = preprocessor
+        self.val_mode = val_mode
+
 
     def __getitem__(self, index):
         """Generate one batch of data, ovverrides the superclass method
@@ -474,6 +544,7 @@ class IQPreprocessDataGenerator(IQDataGenerator):
         np.array: batch of the data with a shape and meaning defined by the preprocessor object.
 
         """
+        
         #start_time = timeit.default_timer()
         #print("Start trying to fetch data... ")
         X, y = super(IQPreprocessDataGenerator, self).__getitem__(index)
@@ -481,7 +552,7 @@ class IQPreprocessDataGenerator(IQDataGenerator):
         #elapsed = timeit.default_timer() - start_time
         #print("Fetching %d 's batches elapsed time:%s " % (self.batch_index, str(elapsed)))
         if self.preprocessor is not None:
-            X = self.preprocessor.process(X)
+            X = self.preprocessor.process(X,self.val_mode)
         return X, y
 
 def deprocess_image(x):
