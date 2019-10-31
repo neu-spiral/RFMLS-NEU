@@ -7,6 +7,7 @@ to the code.
 
 import time
 import argparse
+from argparse import Namespace
 from TrainValTest import TrainValTest, get_model
 import DataGenerators.NewDataGenerator as DG
 from keras.callbacks import TensorBoard
@@ -27,53 +28,21 @@ def load_params(path):
             params[param] = value
     return params
 
-def set_params(args):
-    with open(args.restore_params_from, 'r') as f:
-        saved_params = json.loads(f)
-        for key in saved_params:
-            try:
-                args[key] = saved_params[key]
-            except:
-                continue
-    return
-    print 'Restoring parameters from config file.'
-    path = args.restore_params_from
-    print 'params path: ', path
-    params = load_params(path)
-    args_ref = params
-    args.slice_size = int(args_ref['slice_size'])
-    args.model_flag = args_ref['model_flag']
-    args.val_from_train = str2bool(args_ref['val_from_train'])
-    args.devices = int(args_ref['devices'])
-    args.cnn_stack = int(args_ref['cnn_stack'])
-    args.fc_stack = int(args_ref['fc_stack'])
-    args.channels = int(args_ref['channels'])
-    args.fc1 = int(args_ref['fc1'])
-    args.fc2 = int(args_ref['fc2'])
-    args.dropout_flag = str2bool(args_ref['dropout_flag'])
-    args.batchnorm = str2bool(args_ref['batchnorm'])
-    args.generator = args_ref['generator']
-    args.preprocessor = args_ref['preprocessor']
-    args.K = int(args_ref['K'])
-    args.files_per_IO = int(args_ref['files_per_IO'])
-    args.normalize = str2bool(args_ref['normalize'])
-    try:
-        args.crop = int(args_ref['crop'])
-    except:
-        args.crop = 0
-    args.training_strategy = args_ref['training_strategy']
-    args.sampling = args_ref['sampling']
-    args.epochs = int(args_ref['epochs'])
-    args.batch_size = int(args_ref['batch_size'])
-    args.lr = float(args_ref['lr'])
-    args.shrink = float(args_ref['shrink'])        
-    args.early_stopping = str2bool(args_ref['early_stopping'])
-    args.patience = int(args_ref['patience'])
-    args.add_padding = str2bool(args_ref['add_padding'])
-    try:
-        args.per_example_strategy = args_ref['per_example_strategy']
-    except:
-        args.per_example_strategy = 'prob_sum'
+def set_params(restore_params_from):
+    '''
+    Load saved model parameters into current model.
+    Input:
+        - restore_params_from: path to model parameters.
+    Output:
+        - new dictionary with loaded parameters
+    '''
+    with open(restore_params_from, 'r') as f:
+        saved_params = json.load(f)
+    d = {key.encode('utf-8'): (value.encode('utf-8')
+                               if type(value) is unicode
+                               else value)
+         for key, value in saved_params.items()}
+    return Namespace(**d)
             
 def makedirs(dir_path):
     if os.path.exists(dir_path):
@@ -93,17 +62,18 @@ def main():
         os.makedirs(os.path.join(args.save_path, args.exp_name))
 
     if args.restore_params_from:
-        set_params(args)
+        args = set_params(args.restore_params_from)
 
     makedirs(args.save_path)
     save_path = os.path.join(args.save_path, args.exp_name)
     makedirs(save_path)
 
-    json_file = os.path.join(save_path, args.exp_name+'.json')
+    json_file = os.path.join(save_path, 'params.json')
     print("*************** Saving Model Parameters ***************")
+    print(args)
     with open(json_file, 'w') as f:
-        json.dumps(vars(args))
-
+        json.dump(vars(args), f)
+        
     print('*************** Framework Initialized ***************')
     pipeline = TrainValTest(base_path=args.base_path,
                             stats_path=args.stats_path,
@@ -231,7 +201,7 @@ def parse_arguments():
     parser.add_argument('--exp_name', default='exp1', type=str, 
                         help='Experiment name.', metavar='')
     
-    parser.add_argument('--base_path', type=str, 
+    parser.add_argument('--base_path', type=str, default=None, 
                         help='Base path containing pickle files.', metavar='')
     
     parser.add_argument('--stats_path', type=str, metavar='', 
@@ -292,7 +262,7 @@ def parse_arguments():
     parser.add_argument('--batchnorm', action='store_true',
                         help='Enable to use batch normalization.')
     
-    parser.add_argument('--pre_weight', default='', type=str, metavar='',
+    parser.add_argument('--pre_weight', default=None, type=str, metavar='',
                         help='Enable if loading pretrained weights.')
     
     parser.add_argument('-c', '--cont', action='store_true', 
