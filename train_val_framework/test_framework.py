@@ -125,7 +125,7 @@ def main():
                              decay=args.decay,
                              shrink=args.shrink,
                              epochs=args.epochs,
-                             generator_type=args.generator,
+                             generator_type='new',
                              processor_type=args.preprocessor,
                              training_strategy=args.training_strategy,
                              file_type=args.file_type,
