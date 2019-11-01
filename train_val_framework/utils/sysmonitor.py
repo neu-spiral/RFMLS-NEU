@@ -46,6 +46,7 @@ class SysMonitor(threading.Thread):
 
     def run(self):
         utils = []
+        print('Running SysMonitor')
         while not self.shutdown:
             self.dt.append(datetime.datetime.now())
             self.utils['gpu'].append([x[2] for x in gpu_info()])
