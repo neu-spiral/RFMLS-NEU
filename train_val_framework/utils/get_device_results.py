@@ -19,14 +19,19 @@ import matplotlib.pyplot as plt
 def get_device_results(base_path, preds, vote_type, save_path, example_acc, confusion_matrix):
     '''
     Get single device accuracies and report results.
-    inputs:
-        - base_path: path to device examples
-        - preds: path to predictions output from model
+    Inputs:
+        - base_path: path to device data examples
+        - preds: path to predictions file (preds.pkl) output from model
         - vote_type: vote_type used in model
         - save_path: path to save results
         - example_acc: integer to report number of top-X 
           devices with their probabilities for each example
         - confusion_matrix: if True, a confusion matrix will be saved
+    Outputs:
+        - example_accuracy.pkl: dictionary with top device candidates
+                                per signal example.
+        - confusion_matrix.png: confusion matrix png.
+        - confusion_matrix.pkl: pickle file containing confusion matrix.
     '''
 
     # load pickle files
@@ -104,22 +109,4 @@ def get_device_results(base_path, preds, vote_type, save_path, example_acc, conf
         plt.ylabel('True label')
         plt.colorbar()
         plt.savefig(os.path.join(save_path, 'confusion_matrix.png'))
-
-
-
-if __name__ == '__main__':
-    '''
-    Test confusion_matrix.
-    '''
-
-    base_path = '/scratch/RFMLS/dec18_darpa/v3_list/equalized/1Cv2/phy_payload_no_offsets_iq/' 
-    preds = '/home/bruno/docker_test/probsum/test_load_params/preds.pkl'
-    with open(preds, 'r') as f:
-        preds = pickle.load(f)
-    vote_type = 'prob_sum'
-    save_path = '/home/bruno/docker_test/probsum/test_load_params/'
-    confusion_matrix = True
-    example_acc = 5
-
-    get_device_acc(base_path, preds, vote_type, save_path, example_acc, confusion_matrix)
 
