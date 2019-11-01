@@ -8,6 +8,8 @@ to the code.
 from keras.callbacks import ModelCheckpoint
 import warnings
 
+from utils.sysmonitor import SysMonitor
+
 class CustomModelCheckpoint(ModelCheckpoint):
     def __init__(self, filepath,  **kwargs):
         """
@@ -20,6 +22,8 @@ class CustomModelCheckpoint(ModelCheckpoint):
         """
 
         self.best_path = ''
+        #self.monitor = SysMonitor()
+        #self.monitor.run()
         super(CustomModelCheckpoint, self).__init__(filepath, **kwargs)
 
     def __super_epoch_end(self, epoch, logs=None):
