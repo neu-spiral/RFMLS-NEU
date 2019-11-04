@@ -16,6 +16,38 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 
+def visualize_training_history(history, save_path):
+    '''
+    Visualize training and validation values and loss.
+    Inputs:
+        - history: a fitted Keras model
+        - save_path: directory path to save visualizations
+    Outputs:
+        - train_val_accuracy.png: plot showing training accuracy
+                                  per epoch
+        - train_val_loss.png: plot showing training loss per epoch
+    '''
+    
+    # Plot training & validation accuracy values
+    plt.plot(history.history['accuracy'])
+    plt.plot(history.history['val_acc'])
+    plt.title('Model accuracy')
+    plt.ylabel('Accuracy')
+    plt.xlabel('Epoch')
+    plt.legend(['Train', 'Test'], loc='upper left')
+    plt.savefig(os.path.join(save_path, 'train_val_accuracy.png'))
+
+    # Plot training & validation loss values
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title('Model loss')
+    plt.ylabel('Loss')
+    plt.xlabel('Epoch')
+    plt.legend(['Train', 'Test'], loc='upper left')
+    plt.savefig(os.path.join(save_path, 'train_val_loss.png'))
+
+
+
 def get_device_results(base_path, preds, vote_type, save_path, example_acc, confusion_matrix):
     '''
     Get single device accuracies and report results.
