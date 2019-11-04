@@ -67,10 +67,16 @@ def main():
     makedirs(args.save_path)
     save_path = os.path.join(args.save_path, args.exp_name)
     makedirs(save_path)
+    
+    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.id_gpu)
 
     json_file = os.path.join(save_path, 'params.json')
-    print("*************** Saving Model Parameters ***************")
-    print(args)
+    print("*************** Configuration ***************")
+    args_dic = vars(args)
+    for arg, value in args_dic.items():
+        line = arg + ' : ' + str(value)
+        print(line)
     with open(json_file, 'w') as f:
         json.dump(vars(args), f)
         
@@ -80,9 +86,15 @@ def main():
                             save_path=save_path,
                             multigpu=args.multigpu,
                             num_gpu=args.num_gpu,
-                            val_from_train=args.val_from_train)
+                            val_from_train=args.val_from_train,
+                            visualize_training=args.visualize_training)
 
-    if not args.cont or not len(args.restore_model_from):
+    if args.restore_model_from:
+        print('*************** Adding Existing Model ***************')
+        pipeline.load_model_structure(args.slice_size,
+                                      args.devices,
+                                      args.restore_model_from)
+    else:
         print('*************** Adding New Model ***************')
         new_model = get_model(args.model_flag, {'slice_size':args.slice_size, 
                                                 'classes':args.devices, 
@@ -99,14 +111,8 @@ def main():
                            classes=args.devices,
                            model_flag=args.model_flag,
                            model=new_model)
-        
-    else:
-        print('*************** Adding Existing Model ***************')
-        pipeline.load_model_structure(args.slice_size,
-                                      args.devices,
-                                      args.restore_model_from)
 
-    if args.cont and len(args.restore_weight_from):
+    if args.restore_weight_from:
         print('*************** Adding Existing Weights ***************')
         pipeline.load_weights(args.restore_weight_from,
                               args.load_by_name)
@@ -120,7 +126,7 @@ def main():
         pipeline.train_model(args.batch_size,
                              args.K,
                              args.files_per_IO,
-                             cont=args.cont,
+                             cont=bool(args.restore_weight_from or args.restore_model_from),
                              lr=args.lr,
                              decay=args.decay,
                              shrink=args.shrink,
@@ -139,7 +145,7 @@ def main():
         
         train_time = time.time() - start_time
         if args.time_analysis:
-            print('Time to train model %0.3f' % train_time) 
+            print('Time to train model %0.3f s' % train_time) 
     else:
         print('*************** Not Training Model ***************')
 
@@ -187,7 +193,7 @@ def main():
         test_time = time.time() - start_time
         
         if args.time_analysis:
-            print('Time to test model %0.3f' % test_time)
+            print('Time to test model %0.3f s' % test_time)
 
         print 'per-slice accuracy: ', acc_slice, ', per-example accuracy : ', acc_ex
     
@@ -364,6 +370,10 @@ def parse_arguments():
     
     parser.add_argument('--time_analysis', action='store_true',
                         help='Report timing for training model and testing model')
+    
+    parser.add_argument('--visualize_training', action='store_true',
+                       help='Visualize model training history for train and validation \
+                       values and loss.')
 
     return parser.parse_args()
     
