@@ -20,7 +20,7 @@ import timeit
 
 from CustomModelCheckpoint import CustomModelCheckpoint
 from evaluate_model import compute_accuracy
-from get_device_results import get_device_results
+from utils.get_device_results import get_device_results, visualize_training_history
 from keras import backend as K
 from keras.callbacks import ModelCheckpoint, EarlyStopping
 from keras.layers.convolutional import Conv2D, MaxPooling2D, ZeroPadding2D, Conv1D, MaxPooling1D
@@ -97,7 +97,8 @@ class TrainValTest():
         - val_from_train: enable to use validation from train set
     '''
     def __init__(self, base_path, stats_path, save_path,
-                 multigpu=True, num_gpu=8, val_from_train = False):
+                 multigpu=True, num_gpu=8, val_from_train=False,
+                 visualize_training=False):
         self.model = None
         self.base_path = base_path
         self.stats_path = stats_path
@@ -106,9 +107,7 @@ class TrainValTest():
         self.multigpu = multigpu
         self.num_gpu = num_gpu
         self.val_from_train = val_from_train
-        print base_path
-        print stats_path
-        print save_path
+        self.visualize_training=visualize_training
 
     def add_model(self, slice_size, classes, model_flag, model):
         self.slice_size = slice_size
@@ -279,8 +278,8 @@ class TrainValTest():
             with tf.device("/cpu:0"):
                 cpu_net = self.model
                 
-                net = multi_gpu_model(cpu_net, gpus=num_gpu)
-                net.compile(loss='categorical_crossentropy',
+                cpu_net = multi_gpu_model(cpu_net, gpus=num_gpu)
+                cpu_net.compile(loss='categorical_crossentropy',
                             optimizer=optimizer,
                             metrics=['accuracy'])
                 call_backs = []
@@ -297,7 +296,7 @@ class TrainValTest():
 
                 # add initial epoch number
                 init_epoch = self.epoch_number if cont else 0
-                net.fit_generator(generator=train_generator,
+                cpu_net.fit_generator(generator=train_generator,
                     validation_data=val_generator,
                     use_multiprocessing=False,
                     max_queue_size=100,
@@ -333,7 +332,10 @@ class TrainValTest():
                     epochs=epochs,
                     callbacks=call_backs,
                     initial_epoch=init_epoch)
-
+        print cpu_net.history
+        if self.visualize_training:
+            visualize_training_history(cpu_net, self.save_path)
+            
         self.best_model_path = checkpoint.best_path
 
     def test_model(self, slice_size, shrink=1, batch_size=16, vote_type='majority',
