@@ -332,9 +332,9 @@ class TrainValTest():
                     epochs=epochs,
                     callbacks=call_backs,
                     initial_epoch=init_epoch)
-        print cpu_net.history
+
         if self.visualize_training:
-            visualize_training_history(cpu_net, self.save_path)
+            visualize_training_history(cpu_net.history, self.save_path)
             
         self.best_model_path = checkpoint.best_path
 
