@@ -55,7 +55,7 @@ def main():
                                  root_adsb=args.root_adsb,
                                  root_newtype=args.root_newtype,
                                  out_root=args.out_root_data)
-        extraction.run()
+        #extraction.run()
 
         print '*************** Filtering signals ***************'
         datatypes = ['wifi']
@@ -68,12 +68,12 @@ def main():
                 datatype=datatype,
                 signal_BW_useful=args.signal_BW_useful,
                 num_guard_samp=args.num_guard_samp)
-            filter_wifi.run()
+            #filter_wifi.run()
 
         if args.wifi_eq:
             print '*************** Signals Equalization***************'
             filtered_path = os.path.join(args.out_root_data, args.task, 'wifi/')
-            command = ["sh", "src/preprocessing/folder_loop.sh", filtered_path]
+            command = ["sh", "../preprocessing/folder_loop.sh", filtered_path]
             subprocess.call(command)
 
         print '*************** Create partitions, labels and \

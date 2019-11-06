@@ -18,7 +18,7 @@ import string
 import sys
 import timeit
 
-from CustomModelCheckpoint import CustomModelCheckpoint
+from Checkpoints.CustomModelCheckpoint import CustomModelCheckpoint
 from evaluate_model import compute_accuracy
 from utils.get_device_results import get_device_results, visualize_training_history
 from keras import backend as K
@@ -31,7 +31,7 @@ from keras.optimizers import Adam
 from keras.regularizers import l2
 from keras.utils import multi_gpu_model
 from keras.utils import np_utils
-from MultiGPUModelCheckpoint import MultiGPUModelCheckpoint
+from Checkpoints.MultiGPUModelCheckpoint import MultiGPUModelCheckpoint
 from random import shuffle
 
 
