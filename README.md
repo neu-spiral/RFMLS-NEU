@@ -15,8 +15,10 @@ Please install the python dependencies found in `requirements.txt` with:
 python install -r requirements.txt
 ```
 
+GNURadio is used in preprocessing the dataset, and thus it must be installed. For installation instructions please follow the official [GNURadio guide](https://github.com/gnuradio/gnuradio). 
+
 ## Preprocessing a Dataset
-Preprocessing amounts to filtering (re-centering the signals to a base band based on their metadata) and equalization. Equalization only applies to WiFi signals, and is optional. Preprocessing also generates files needed by both training and testing; this is why all data needs to be preprocessed (whether WiFi, ADS-B, or a new type of dataset). 
+Preprocessing amounts to filtering, which entails re-centering the signals to a base band based on their metadata and equalization. Equalization only applies to WiFi signals, and is optional. Preprocessing also generates reference pickle files needed for training and testing a model; hence all data needs to be preprocessed through this script, whether it be WiFi, ADS-B, or a new type of dataset. 
 
 Note that if a task contains both WiFi and ADS-B data, both will be preprocessed simutlaneously (i.e., in one execution of the  code with `--preprocess True` evoked). 
 
@@ -49,9 +51,9 @@ Note that if a task contains both WiFi and ADS-B data, both will be preprocessed
                       do not contain any data transmission.
                       default: 2e6
 ```
-Preprocessed data are stored under `/$out_root_data/$task/datatype {wifi, ADS-B, newtype}/`. There is no need to specify the datatype, which will be detected automatically according to `.tsv` files. 
+Preprocessed data are stored under `/$out_root_data/$task/{wifi, ADS-B, newtype}/`. There is no need to specify the datatype, which will be detected automatically according to `.tsv` files. 
 
-Other generated files are stored under `/$out_root_list/$task/datatype {wifi, ADS-B, newtype, mixed}/`. This folder will contain five files needed by both training and testing: 
+Other generated files are stored under `/$out_root_list/$task/{wifi, ADS-B, newtype, mixed}/`. This folder will contain five files needed by both training and testing: 
  * a `file_list.pkl` file containing path of all preprocessed example needed by training and testing, 
  * a `label.pkl` file containing a dictionary {path of preprocessed example: device name(e.g., 'wifi_100_crane-gfi_1_dataset-8965')},
  * a `device_ids.pkl` file containing a dictionary {device name(e.g., 'wifi_100_crane-gfi_1_dataset-8965'): device id(an integer)},
@@ -165,45 +167,141 @@ The `--data_path` folder corresponds to the `--out_root_list` folder where the o
  * a `config` file containing the parameter configuration used during training and testing, and
  * a `log.out` file that contains a detailed output log, including the final test accuracy. The last line contains the per slice and per example/signal accuracy on the test set. 
 
-For a full list of arguments of the framework you may use `--help`.
+For a full list of arguments of preprocessing or building a model, you may use `--help`.
 
 ```bash
-Model usage :
-    --exp_name            create an exp_name folder to save logs, models etc
-    --base_path           directory used for --out_root_list
-    --stats_path          directory used for --out_root_list
-    --save_path           path for saving the model and logs, it should be the parent folder of exp_name
-    --file_type           Specify type {mat | pkl} of file you want to read
-    --devices             set the number of devices in dataset. default: 50
-    --train               enable training in model {True | False}. default: True
-    --test                enable testing in model {True | False}. default: True
-    --val_from_train .    If validation not present in partition file, generate one from the training set. default: False
-    --cont                specify continue training/testing or not {True | False}. 
-                          if testing a pre-trained model, please specify it as True. 
-                          default: False. 
-    --restore_model_from  enable to load pretrained model structure {True | False} 
-                          default: False
-    --restore_weight_from enable to load pre-trained model weight {True | False}. 
-                          default: False
-    --model_flag          set the model architecture {baseline | resnet1d}. default: baseline
-    --slice_size          set the slice size. default: 256
-    --dropout_flag        enable dropout {True | False}. default: False
-    --fc_stack            set the number of fully connected layers. default: 3
-    --cnn_stack           set the number of convultion layers. default: 5
-    --K                   set the kappa value. default: 10
-    --batch_size          set the batch size. default: 128
-    --lr                  set the learning rate for optimizer. default: 0.0001
-    --epochs              set the number of epochs. default: 25
-    --batchnorm           enable batchnormalization between layers {True | False}.
-                          default: False
-    --add_padding         add padding if examples are smaller than slice size {True | False}.
-                          default: True
-    --normalize           enable to normalize data using mean and standard deviation from stats
-                          files (if stats does not have this info, it is ignored) {True | False}.
-                          default: True
-    --early_stopping      enable early stopping for model performance {True | False}.
-                          default: True
-    --patience            set number of epochs to wait for improved trained accuracy.
-                          default: 7
-    --test_stride         specify the stride to use for testing. default: 16
+Processing usage, optional arguments:
+  -h, --help            show this help message and exit
+  --task TASK           Specify the task name (default: 1Cv2)
+  --multiburst          Specify the task is a multiburst testing task or not.
+                        If it is, we assume the corresponding general task has
+                        alredy processed. For example, if the task is
+                        specified as 1MC, we will look for corresponding
+                        processed data, labels of 1Cv2. (default: False)
+  --new_device          Specify the task is a novel device testing task.
+                        (default: False)
+  --train_tsv TRAIN_TSV
+                        Specify the path of .tsv for training (default: /scrat
+                        ch/RFMLS/RFML_Test_Specs_Delivered_v3/test1/1Cv2.train
+                        .tsv)
+  --test_tsv TEST_TSV   Specify the path of .tsv for testing (default: /scratc
+                        h/RFMLS/RFML_Test_Specs_Delivered_v3/test1/1Cv2.test.t
+                        sv)
+  --root_wifi ROOT_WIFI
+                        Specify the root path of WiFi signals (default:
+                        /mnt/rfmls_data/disk1/wifi_sigmf_dataset_gfi_1/)
+  --root_adsb ROOT_ADSB
+                        Specify the root path of ADS-B signals (default:
+                        /mnt/rfmls_data/disk2/adsb_gfi_3_dataset/)
+  --out_root_data OUT_ROOT_DATA
+                        Specify the root path of preprocessed data (default:
+                        ./data/v3)
+  --out_root_list OUT_ROOT_LIST
+                        Specify the root path of data lists for training
+                        (default: ./data/v3_list)
+  --wifi_eq             Specify wifi signals need to be equalized or not.
+                        (default: False)
+  --newtype_process     [New Type Signal]Specify process new type signals or
+                        not (default: False)
+  --root_newtype ROOT_NEWTYPE
+                        [New Type Signal]Specify the root path of new type
+                        signals (default: )
+  --newtype_filter      [New Type Signal]Specify if new type signals need to
+                        be filtered. (default: False)
+  --signal_BW_useful SIGNAL_BW_USEFUL
+                        [New Type Signal]Specify Band width for new type
+                        signal. (default: None)
+  --num_guard_samp NUM_GUARD_SAMP
+                        [New Type Signal]Specify number of guard samples.
+                        (default: 2e-06)
+  --time_analysis       Enable to report time preprocessing takes (default:
+                        False)
+
+
+Model usage, optional arguments:
+  -h, --help            show this help message and exit
+  --exp_name            Experiment name. (default: exp1)
+  --base_path           Base path containing pickle files. (default: None)
+  --stats_path          Path containing statistics pickle file. (default:
+                        None)
+  --save_path           Path to save experiment weights and logs. (default:
+                        None)
+  --save_predictions    Enable to save model predictions. (default: False)
+  --task                Set experiment task. (default: 1Cv2)
+  --equalize            Enable to use equalized WiFi data. (default: False)
+  --data_type           Set the data type. (default: wifi)
+  --file_type           Set data file format. (default: mat)
+  --decimated           Enable if the data in the files is decimated.
+                        (default: False)
+  --val_from_train      If validation not present in partition file, generate
+                        one from the training set. (If false, use test set as
+                        validation). (default: False)
+  -m , --model_flag     Define model architecture. (default: baseline)
+  -ss , --slice_size    Set slice size. (default: 1024)
+  -d , --devices        Set number of total devices. (default: 100)
+  --cnn_stack           [Baseline Model] Set number of cnn layers. (default:
+                        3)
+  --fc_stack            [Baseline Model] Set number of fc layers. (default: 2)
+  --channels            [Baseline Model] Set number of channels of cnn.
+                        (default: 128)
+  --fc1                 [Baseline Model] Set number of neurons in the first fc
+                        layer. (default: 256)
+  --fc2                 [Baseline Model] Set number of neurons in the
+                        penultimate fc layer. (default: 128)
+  --dropout_flag        Enable to use dropout layers. (default: False)
+  --batchnorm           Enable to use batch normalization. (default: False)
+  --pre_weight          Enable if loading pretrained weights. (default: None)
+  -c, --cont            Enable to continue training/testing. (default: False)
+  --restore_model_from 
+                        Path from where to load model structure. (default:
+                        None)
+  --restore_weight_from 
+                        Path from where to load model weights. (default: None)
+  --restore_params_from 
+                        Path from where to load model parameters. (default:
+                        None)
+  --load_by_name        Enable to only load weights by name. (default: False)
+  --add_padding         Enable to add zero-padding if examples are smaller
+                        than slice size. (default: False)
+  --try_concat          Enable if examples are smaller than slice size and
+                        using demodulated data, try and concat them. (default:
+                        False)
+  --preprocessor        Set preprocessor type to use. (default: no)
+  --K                   Set batch down sampling factor K. (default: 1)
+  --files_per_IO        Set files loaded to memory per IO. (default: 500000)
+  --normalize           Specify if you want to normalize the data using mean
+                        and std in stats files (if stats does not have this
+                        info, it is ignored). (default: False)
+  --crop                Set to keep first "crop" samples. (default: 0)
+  --training_strategy   Set training strategy to use. (default: big)
+  --sampling            Set sampling strategy to use. (default: model)
+  --epochs              Set epochs to train. (default: 10)
+  -bs , --batch_size    Set batch size. (default: 64)
+  --lr                  Set optimizer learning rate. (default: 0.0001)
+  --decay               Set optimizer weight decay. (default: 0.0)
+  -mg, --multigpu       Enable multiple distributed GPUs. (default: False)
+  -ng , --num_gpu       Set number of distributed GPUs if --multigpu enabled.
+                        (default: 8)
+  --id_gpu              Set GPU ID to use. (default: 0)
+  --shrink              Set down sampling factor. (default: 1)
+  --early_stopping      Enable for early stopping. (default: False)
+  --patience            Set number of epochs for early stopping patience.
+                        (default: 1)
+  --train               Enable to train model. (default: False)
+  -t, --test            Enable to test model. (default: False)
+  --test_stride         Set stride to use for testing. (default: 16)
+  --per_example_strategy 
+                        Set the strategy used to compute the per example
+                        accuracy {majority, prob_sum, log_prob_sum, all}.
+                        (default: prob_sum)
+  --flag_error_analysis
+                        Enable for error analysis. (default: False)
+  --confusion_matrix    Enable to save a confusion matrix in pickle format and
+                        to save a confusion matrix plot. (default: False)
+  --get_device_acc      Report and save number of top class candidates for
+                        each example. (default: 0)
+  --time_analysis       Report timing for training model and testing model
+                        (default: False)
+  --visualize_training  Visualize model training history for train and
+                        validation values and loss. (default: False)
 ```
