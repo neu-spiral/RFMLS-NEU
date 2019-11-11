@@ -97,8 +97,7 @@ class TrainValTest():
         - val_from_train: enable to use validation from train set
     '''
     def __init__(self, base_path, stats_path, save_path,
-                 multigpu=True, num_gpu=8, val_from_train=False,
-                 visualize_training=False):
+                 multigpu=True, num_gpu=8, val_from_train=False):
         self.model = None
         self.base_path = base_path
         self.stats_path = stats_path
@@ -107,7 +106,6 @@ class TrainValTest():
         self.multigpu = multigpu
         self.num_gpu = num_gpu
         self.val_from_train = val_from_train
-        self.visualize_training=visualize_training
 
     def add_model(self, slice_size, classes, model_flag, model):
         self.slice_size = slice_size
@@ -147,6 +145,7 @@ class TrainValTest():
 
             
     def load_data(self, sampling):
+        print(self.base_path)
         file = open(os.path.join(self.base_path, "label.pkl"),'r')
         self.labels = pickle.load(file)
         file.close()
@@ -333,15 +332,14 @@ class TrainValTest():
                     callbacks=call_backs,
                     initial_epoch=init_epoch)
 
-        if self.visualize_training:
-            visualize_training_history(cpu_net.history, self.save_path)
+        visualize_training_history(cpu_net.history, self.save_path)
             
         self.best_model_path = checkpoint.best_path
 
     def test_model(self, slice_size, shrink=1, batch_size=16, vote_type='majority',
                    processor=None, test_stride=1, file_type='mat', normalize=False,
-                   add_padding=False, flag_error_analysis=True, figure_path='./Output/',
-                   crop=0, save_predictions=False, compute_confusion_matrix=False, get_device_acc=0):
+                   add_padding=False, figure_path='./Output/',
+                   crop=0, save_predictions=False, get_device_acc=0):
         '''
         Test model performance on unseen dataset and evaluate with
         specified method. 
@@ -379,8 +377,7 @@ class TrainValTest():
                 pickle.dump(preds,fp)
 
         # compute confusion matrix from predictions
-        if compute_confusion_matrix or get_device_acc:
-            get_device_results(self.base_path, preds, vote_type, self.save_path, get_device_acc, True)
+        get_device_results(self.base_path, preds, vote_type, self.save_path, get_device_acc, True)
 
 
         return acc_slice, acc_ex, preds
