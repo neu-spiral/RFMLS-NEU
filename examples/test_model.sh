@@ -8,6 +8,5 @@ python -u ../train_val_framework/run_framework.py \
     --model_flag baseline \
     --restore_weight_from ../../MILCOM/experiment_1/weights.hdf5 \
     --restore_model_from ../../MILCOM/experiment_1/baseline_model.json \
-    --slice_size 198 \
     --id_gpu $1 \
     --test \
