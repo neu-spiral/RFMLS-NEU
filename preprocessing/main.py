@@ -55,7 +55,7 @@ def main():
                                  root_adsb=args.root_adsb,
                                  root_newtype=args.root_newtype,
                                  out_root=args.out_root_data)
-        #extraction.run()
+        extraction.run()
 
         print '*************** Filtering signals ***************'
         datatypes = ['wifi']
@@ -68,7 +68,7 @@ def main():
                 datatype=datatype,
                 signal_BW_useful=args.signal_BW_useful,
                 num_guard_samp=args.num_guard_samp)
-            #filter_wifi.run()
+            filter_wifi.run()
 
         if args.wifi_eq:
             print '*************** Signals Equalization***************'
@@ -85,10 +85,10 @@ def main():
                                       save_path=os.path.join(args.out_root_list, args.task))
         generate_label.run(wifi_eq=args.wifi_eq,
                            newtype=args.newtype_process,
-                           newtype_filter=args.newtype_filter)
+                           newtype_filter=args.newtype_filter,
+                           mixed=args.mixed)
 
-    if args.time_analysis:
-        print 'Total time to preprocess: %d s' % (time.time()-start_time)
+    print 'Total time to preprocess: %d s' % (time.time()-start_time)
 
 
 def parse_arguments():
@@ -139,6 +139,9 @@ def parse_arguments():
     parser.add_argument('--wifi_eq', action='store_true',
                         help='Specify wifi signals need to be equalized or not.')
 
+    parser.add_argument('--mixed', action='store_true',
+                        help='Generate mixed dataset if different protocols are used.')
+
     parser.add_argument('--newtype_process', action='store_true',
                         help='[New Type Signal]Specify process new type signals or not')
 
@@ -154,8 +157,6 @@ def parse_arguments():
     parser.add_argument('--num_guard_samp', type=float, default=2e-6,
                         help='[New Type Signal]Specify number of guard samples.')
 
-    parser.add_argument('--time_analysis', action='store_true',
-                        help='Enable to report time preprocessing takes')
     return parser.parse_args()
 
 

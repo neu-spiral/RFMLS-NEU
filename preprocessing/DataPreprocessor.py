@@ -556,14 +556,14 @@ class create_label():
         with open(os.path.join(label_path, 'stats.pkl'), 'wb') as handle:
             pickle.dump(stats, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    def run(self, wifi_eq=False, newtype=False, newtype_filter=False):
+    def run(self, wifi_eq=False, newtype=False, newtype_filter=False, mixed=False):
         print 'generating files for WiFi, ADS-B and mixed dataset'
         file_list_wifi = generate_files(os.path.join(self.base_path, 'wifi'),
-                                        self.base_path.count(os.path.sep)+3,
+                                        self.base_path.count(os.path.sep)+4,
                                         '/*_filtered.mat')
         print os.path.join(self.base_path, 'wifi')
         file_list_adsb = generate_files(os.path.join(self.base_path, 'ADS-B'),
-                                        self.base_path.count(os.path.sep)+2,
+                                        self.base_path.count(os.path.sep)+3,
                                         '/*.mat')
         file_list_mixed = file_list_wifi + file_list_adsb 
         signal_types = ['wifi', 'ADS-B']
@@ -598,10 +598,11 @@ class create_label():
                 signal_types.append('newtype')
                 processed_types.append('')
             file_list_mixed = file_list_mixed + file_list_new           
-        
-        file_lists.append(file_list_mixed)
-        signal_types.append('mixed')
-        processed_types.append('')
+
+        if mixed:        
+            file_lists.append(file_list_mixed)
+            signal_types.append('mixed')
+            processed_types.append('')
                 
         for signal_type, processed_type, file_list in zip(signal_types, 
                                                           processed_types, file_lists):
