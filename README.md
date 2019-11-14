@@ -169,6 +169,7 @@ The `--data_path` folder corresponds to the `--out_root_list` folder where the o
 
 For a full list of arguments of preprocessing or building a model, you may use `--help`.
 
+Commands for preprocessing:
 ```bash
 Processing usage, optional arguments:
   -h, --help            show this help message and exit
@@ -217,30 +218,32 @@ Processing usage, optional arguments:
   --time_analysis       Enable to report time preprocessing takes (default:
                         False)
 
-
+```
+Commands for building, training, and testing a model:
+```bash
 Model usage, optional arguments:
   -h, --help            show this help message and exit
-  --exp_name            Experiment name. (default: exp1)
-  --base_path           Base path containing pickle files. (default: None)
-  --stats_path          Path containing statistics pickle file. (default:
-                        None)
+  --exp_name            Experiment name. (default: experiment_1)
+  --pickle_files        Path containing pickle files with data information.
+                        (default: None)
   --save_path           Path to save experiment weights and logs. (default:
                         None)
-  --save_predictions    Enable to save model predictions. (default: False)
+  --save_predictions    Disable saving model predictions. (default: True)
   --task                Set experiment task. (default: 1Cv2)
   --equalize            Enable to use equalized WiFi data. (default: False)
-  --data_type           Set the data type. (default: wifi)
-  --file_type           Set data file format. (default: mat)
+  --data_type           Set the data type {wifi | adsb}. (default: wifi)
+  --file_type           Set data file format {mat | pickle}. (default: mat)
   --decimated           Enable if the data in the files is decimated.
                         (default: False)
   --val_from_train      If validation not present in partition file, generate
-                        one from the training set. (If false, use test set as
-                        validation). (default: False)
-  -m , --model_flag     Define model architecture. (default: baseline)
-  -ss , --slice_size    Set slice size. (default: 1024)
-  -d , --devices        Set number of total devices. (default: 100)
+                        one from the training set. (If called, use test set as
+                        validation). (default: True)
+  -m , --model_flag     Define model architecture {baseline | vgg16 | resnet50
+                        | resnet1d}. (default: baseline)
+  -ss , --slice_size    Set slice size. (default: 198)
+  -d , --devices        Set number of total devices. (default: 50)
   --cnn_stack           [Baseline Model] Set number of cnn layers. (default:
-                        3)
+                        5)
   --fc_stack            [Baseline Model] Set number of fc layers. (default: 2)
   --channels            [Baseline Model] Set number of channels of cnn.
                         (default: 128)
@@ -250,8 +253,6 @@ Model usage, optional arguments:
                         penultimate fc layer. (default: 128)
   --dropout_flag        Enable to use dropout layers. (default: False)
   --batchnorm           Enable to use batch normalization. (default: False)
-  --pre_weight          Enable if loading pretrained weights. (default: None)
-  -c, --cont            Enable to continue training/testing. (default: False)
   --restore_model_from 
                         Path from where to load model structure. (default:
                         None)
@@ -261,22 +262,23 @@ Model usage, optional arguments:
                         Path from where to load model parameters. (default:
                         None)
   --load_by_name        Enable to only load weights by name. (default: False)
-  --add_padding         Enable to add zero-padding if examples are smaller
-                        than slice size. (default: False)
+  --padding             Disable adding zero-padding if examples are smaller
+                        than slice size. (default: True)
   --try_concat          Enable if examples are smaller than slice size and
                         using demodulated data, try and concat them. (default:
                         False)
   --preprocessor        Set preprocessor type to use. (default: no)
-  --K                   Set batch down sampling factor K. (default: 1)
+  --K                   Set batch down sampling factor K. (default: 16)
   --files_per_IO        Set files loaded to memory per IO. (default: 500000)
-  --normalize           Specify if you want to normalize the data using mean
-                        and std in stats files (if stats does not have this
-                        info, it is ignored). (default: False)
+  --normalize           Specify if you do not want to normalize the data using
+                        mean and std in stats files (if stats does not have
+                        this info, it is ignored). (default: True)
   --crop                Set to keep first "crop" samples. (default: 0)
-  --training_strategy   Set training strategy to use. (default: big)
+  --training_strategy   Set training strategy to use {big | fft | tensor}.
+                        (default: big)
   --sampling            Set sampling strategy to use. (default: model)
-  --epochs              Set epochs to train. (default: 10)
-  -bs , --batch_size    Set batch size. (default: 64)
+  --epochs              Set epochs to train. (default: 25)
+  -bs , --batch_size    Set batch size. (default: 512)
   --lr                  Set optimizer learning rate. (default: 0.0001)
   --decay               Set optimizer weight decay. (default: 0.0)
   -mg, --multigpu       Enable multiple distributed GPUs. (default: False)
@@ -284,7 +286,7 @@ Model usage, optional arguments:
                         (default: 8)
   --id_gpu              Set GPU ID to use. (default: 0)
   --shrink              Set down sampling factor. (default: 1)
-  --early_stopping      Enable for early stopping. (default: False)
+  --early_stopping      Disable early stopping. (default: True)
   --patience            Set number of epochs for early stopping patience.
                         (default: 1)
   --train               Enable to train model. (default: False)
@@ -292,16 +294,8 @@ Model usage, optional arguments:
   --test_stride         Set stride to use for testing. (default: 16)
   --per_example_strategy 
                         Set the strategy used to compute the per example
-                        accuracy {majority, prob_sum, log_prob_sum, all}.
+                        accuracy {majority | prob_sum | log_prob_sum, all}.
                         (default: prob_sum)
-  --flag_error_analysis
-                        Enable for error analysis. (default: False)
-  --confusion_matrix    Enable to save a confusion matrix in pickle format and
-                        to save a confusion matrix plot. (default: False)
   --get_device_acc      Report and save number of top class candidates for
-                        each example. (default: 0)
-  --time_analysis       Report timing for training model and testing model
-                        (default: False)
-  --visualize_training  Visualize model training history for train and
-                        validation values and loss. (default: False)
+                        each example. (default: 5)
 ```
