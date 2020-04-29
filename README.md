@@ -1,13 +1,20 @@
 # Contents
 
 * [Acknowledgement](#acknowledgement)
+* [Citing This Paper](#citing-this-paper)
 * [Environment Setup](#environment-setup)
 * [Preprocessing a Dataset](#preprocessing-a-dataset) 
      *  [An Example: Preprocessing a General Task](#an-example-preprocessing-a-general-task)
      *  [An Example: Preprocessing a New Dataset](#an-example-preprocessing-a-new-dataset)
 * [Training and Testing](#training-and-testing)
+
 ## Acknowledgement 
 This repository contains the source code and tests developed under the DARPA Radio Frequency Machine Learning Systems (RFMLS) program contract N00164-18-R-WQ80. All the code released here is unclassified and the Government has unlimited rights to the code. 
+
+## Citing This Paper
+Please cite the following paper if you intend to use this code for your research.
+> J. Tong, R. Bruno, O. Emmanuel, S. Nasim, W. Zifeng, S.Kunal, G. Andrey, D. Jennifer, C. Kaushik, I. Stratis, "Deep Learning for RF Fingerprinting: A Massive Experimental Study", Internet of Things (IoT) Magazine, 2020.
+
 
 ## Environment Setup
 Please install the python dependencies found in `requirements.txt` with:
